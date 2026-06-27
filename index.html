@@ -136,6 +136,7 @@
     }
     .vibe-cringe { background: #ff6b9d; color: #1a1a1a; }
     .vibe-controversial { background: #ff4500; color: #fff; }
+    .vibe-snarky { background: #2ecc71; color: #1a1a1a; }
 
     /* TAGS */
     .tag-row {
@@ -171,6 +172,8 @@
     .vibe-cringe-active .choice-b { background: #ff9f43; }
     .vibe-controversial-active .choice-a { background: #c0392b; }
     .vibe-controversial-active .choice-b { background: #2c3e50; }
+    .vibe-snarky-active .choice-a { background: #27ae60; }
+    .vibe-snarky-active .choice-b { background: #16a085; }
     .choice-letter {
       font-family: 'Black Han Sans', sans-serif;
       font-size: clamp(48px, 7vw, 68px);
@@ -335,6 +338,7 @@
         <option value="pop culture and trending topics">Pop Culture</option>
         <option value="cringe" id="cringe-opt" style="display:none">😬 Cringe (Staff Only)</option>
         <option value="controversial educational trends" id="controversial-opt" style="display:none">🌶️ Controversial Ed Trends (Staff Only)</option>
+        <option value="snarky" id="snarky-opt" style="display:none">😏 Snarky (Staff Only)</option>
       </select>
     </div>
     <div class="timer-group">
@@ -464,7 +468,8 @@
     const isStaff = gradeEl.value === 'staff';
     document.getElementById('cringe-opt').style.display = isStaff ? '' : 'none';
     document.getElementById('controversial-opt').style.display = isStaff ? '' : 'none';
-    if (!isStaff && (vibeEl.value === 'cringe' || vibeEl.value === 'controversial educational trends')) {
+    document.getElementById('snarky-opt').style.display = isStaff ? '' : 'none';
+    if (!isStaff && (vibeEl.value === 'cringe' || vibeEl.value === 'controversial educational trends' || vibeEl.value === 'snarky')) {
       vibeEl.value = 'thought-provoking and philosophical';
       handleVibeChange();
     }
@@ -472,7 +477,7 @@
 
   function handleVibeChange() {
     const v = vibeEl.value;
-    const isSpecial = v === 'cringe' || v === 'controversial educational trends';
+    const isSpecial = v === 'cringe' || v === 'controversial educational trends' || v === 'snarky';
     subjectGroup.classList.toggle('hidden', isSpecial);
     const badge = document.getElementById('vibeBadge');
     const pill = document.getElementById('vibePill');
@@ -484,6 +489,10 @@
       badge.classList.add('visible');
       pill.className = 'vibe-pill vibe-controversial';
       pill.textContent = '🌶️ Spicy Ed Debates';
+    } else if (v === 'snarky') {
+      badge.classList.add('visible');
+      pill.className = 'vibe-pill vibe-snarky';
+      pill.textContent = '😏 Snarky Mode Activated';
     } else {
       badge.classList.remove('visible');
     }
@@ -633,9 +642,10 @@
     currentOptA = '';
     currentOptB = '';
 
-    arena.classList.remove('vibe-cringe-active', 'vibe-controversial-active');
+    arena.classList.remove('vibe-cringe-active', 'vibe-controversial-active', 'vibe-snarky-active');
     if (vibe === 'cringe') arena.classList.add('vibe-cringe-active');
     if (vibe === 'controversial educational trends') arena.classList.add('vibe-controversial-active');
+    if (vibe === 'snarky') arena.classList.add('vibe-snarky-active');
 
     try {
       const res = await fetch('/.netlify/functions/generate', {

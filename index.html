@@ -273,6 +273,30 @@
     .qr-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #FFD700; }
     #qrcode canvas, #qrcode img { border-radius: 8px; }
 
+    .short-url-wrap {
+      text-align: center;
+      margin-top: 6px;
+    }
+    .short-url-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #aaa;
+      margin-bottom: 3px;
+    }
+    .short-url {
+      font-size: 13px;
+      font-weight: 900;
+      color: #FFD700;
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid rgba(255,215,0,0.3);
+      border-radius: 6px;
+      padding: 4px 8px;
+      letter-spacing: 0.02em;
+      word-break: break-all;
+    }
+
     .live-tally {
       display: none; flex-direction: column; gap: 4px; width: 100%;
     }
@@ -411,6 +435,10 @@
       <div class="qr-section" id="qrSection">
         <div class="qr-label">Scan to vote</div>
         <div id="qrcode"></div>
+        <div class="short-url-wrap" id="shortUrlWrap" style="display:none">
+          <div class="short-url-label">Or go to</div>
+          <div class="short-url" id="shortUrl">...</div>
+        </div>
       </div>
       <div class="live-tally" id="liveTally">
         <div class="tally-label">Live votes</div>
@@ -512,6 +540,8 @@
     document.getElementById('voteBarsA').classList.remove('visible');
     document.getElementById('voteBarsB').classList.remove('visible');
     document.getElementById('qrcode').innerHTML = '';
+    document.getElementById('shortUrlWrap').style.display = 'none';
+    document.getElementById('shortUrl').textContent = '...';
     if (pusherChannel && pusherInstance) {
       pusherInstance.unsubscribe(`session-${sessionId}`);
       pusherChannel = null;
@@ -570,7 +600,7 @@
     document.getElementById('totalVotes').textContent = total + (total === 1 ? ' vote' : ' votes');
   }
 
-  function startVoting() {
+  async function startVoting() {
     if (!currentOptA || !currentOptB) return;
 
     sessionId = generateSessionId();
@@ -590,6 +620,23 @@
       colorDark: '#1a1a1a',
       colorLight: '#ffffff',
     });
+
+    // Fetch short URL from TinyURL
+    const shortUrlWrap = document.getElementById('shortUrlWrap');
+    const shortUrlEl = document.getElementById('shortUrl');
+    shortUrlWrap.style.display = 'block';
+    shortUrlEl.textContent = 'Shortening...';
+    try {
+      const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(voteUrl)}`);
+      if (res.ok) {
+        const short = await res.text();
+        shortUrlEl.textContent = short.replace('https://', '');
+      } else {
+        shortUrlEl.textContent = 'See QR code above';
+      }
+    } catch (e) {
+      shortUrlEl.textContent = 'See QR code above';
+    }
 
     if (!pusherInstance) {
       pusherInstance = new Pusher(PUSHER_KEY, { cluster: PUSHER_CLUSTER });

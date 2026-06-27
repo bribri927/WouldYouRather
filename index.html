@@ -492,8 +492,39 @@
   let currentOptB = '';
   let questionActive = false;
 
+  const studentSubjects = [
+    { value: 'any subject or everyday life', label: 'Any / Icebreaker' },
+    { value: 'math and numbers', label: 'Math' },
+    { value: 'science and nature', label: 'Science' },
+    { value: 'history and social studies', label: 'History' },
+    { value: 'language arts and reading', label: 'ELA' },
+    { value: 'technology and AI', label: 'Technology & AI' },
+    { value: 'art and creativity', label: 'Art & Creativity' },
+    { value: 'physical education and health', label: 'PE & Health' },
+    { value: 'school life and learning', label: 'School Life' },
+  ];
+
+  const staffSubjects = [
+    { value: 'general icebreaker and everyday life', label: 'Any / Icebreaker' },
+    { value: 'work-life balance and self-care for educators', label: 'Work-Life Balance' },
+    { value: 'classroom management and teaching strategies', label: 'Teaching Strategies' },
+    { value: 'technology and AI in education', label: 'EdTech & AI' },
+    { value: 'professional development and growth', label: 'Professional Growth' },
+    { value: 'leadership and school culture', label: 'Leadership' },
+    { value: 'food drink and lifestyle', label: 'Food & Lifestyle' },
+    { value: 'travel and adventure', label: 'Travel & Adventure' },
+    { value: 'pop culture and entertainment for adults', label: 'Pop Culture' },
+  ];
+
+  function updateSubjectOptions(isStaff) {
+    const subjectEl = document.getElementById('subject');
+    const options = isStaff ? staffSubjects : studentSubjects;
+    subjectEl.innerHTML = options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+  }
+
   gradeEl.addEventListener('change', () => {
     const isStaff = gradeEl.value === 'staff';
+    updateSubjectOptions(isStaff);
     document.getElementById('cringe-opt').style.display = isStaff ? '' : 'none';
     document.getElementById('controversial-opt').style.display = isStaff ? '' : 'none';
     document.getElementById('snarky-opt').style.display = isStaff ? '' : 'none';

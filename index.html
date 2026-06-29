@@ -396,20 +396,9 @@
 <script>
   let PUSHER_KEY = '';
   let PUSHER_CLUSTER = '';
+  let configLoaded = false;
 
   const gradeEl = document.getElementById('grade');
-
-  async function loadConfig() {
-    try {
-      const res = await fetch('/.netlify/functions/config');
-      const cfg = await res.json();
-      PUSHER_KEY = cfg.pusherKey;
-      PUSHER_CLUSTER = cfg.pusherCluster;
-    } catch(e) {
-      console.error('Config load failed', e);
-    }
-  }
-  loadConfig();
   const vibeEl = document.getElementById('vibe');
   const subjectGroup = document.getElementById('subjectGroup');
 
@@ -421,6 +410,19 @@
   let currentOptA = '';
   let currentOptB = '';
   let questionActive = false;
+
+  // Load Pusher config on page load and mark ready
+  fetch('/.netlify/functions/config')
+    .then(r => r.json())
+    .then(cfg => {
+      PUSHER_KEY = cfg.pusherKey;
+      PUSHER_CLUSTER = cfg.pusherCluster;
+      configLoaded = true;
+      console.log('[WYR] Config loaded, cluster:', PUSHER_CLUSTER);
+    })
+    .catch(e => {
+      console.error('[WYR] Config load failed:', e);
+    });
 
   const studentSubjects = [
     { value: 'any subject or everyday life', label: 'Any / Icebreaker' },
@@ -529,6 +531,11 @@
   async function startVoting() {
     if (!currentOptA || !currentOptB) return;
 
+    if (!configLoaded || !PUSHER_KEY) {
+      alert('Still loading configuration -- please try again in a moment.');
+      return;
+    }
+
     // Reset votes and generate new session
     votesA = 0; votesB = 0;
     sessionId = generateSessionId();
@@ -545,13 +552,18 @@
 
     // Generate QR code
     document.getElementById('qrcode').innerHTML = '';
-    new QRCode(document.getElementById('qrcode'), {
-      text: voteUrl,
-      width: 120,
-      height: 120,
-      colorDark: '#1a1a1a',
-      colorLight: '#ffffff',
-    });
+    try {
+      new QRCode(document.getElementById('qrcode'), {
+        text: voteUrl,
+        width: 120,
+        height: 120,
+        colorDark: '#1a1a1a',
+        colorLight: '#ffffff',
+      });
+    } catch(e) {
+      console.error('[WYR] QR code error:', e);
+      document.getElementById('qrcode').innerHTML = '<div style="color:#FFD700;font-size:11px;padding:8px;">QR unavailable<br>Use URL below</div>';
+    }
 
     // Fetch short URL
     const shortUrlEl = document.getElementById('shortUrl');
@@ -560,7 +572,7 @@
       const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(voteUrl)}`);
       if (res.ok) {
         const short = await res.text();
-        shortUrlEl.textContent = short.replace('https://', '');
+        shortUrlEl.textContent = short.trim().replace('https://', '');
       } else {
         shortUrlEl.textContent = window.location.hostname + '/vote';
       }
@@ -575,21 +587,29 @@
       pusherChannel = null;
     }
 
-    pusherInstance = new Pusher(PUSHER_KEY, {
-      cluster: PUSHER_CLUSTER,
-      forceTLS: true,
-    });
+    try {
+      pusherInstance = new Pusher(PUSHER_KEY, {
+        cluster: PUSHER_CLUSTER,
+        forceTLS: true,
+      });
 
-    pusherInstance.connection.bind('error', (err) => {
-      console.error('[WYR] Pusher error:', err);
-    });
+      pusherInstance.connection.bind('connected', () => {
+        console.log('[WYR] Pusher connected, session:', sessionId);
+      });
+      pusherInstance.connection.bind('error', (err) => {
+        console.error('[WYR] Pusher error:', err);
+      });
 
-    pusherChannel = pusherInstance.subscribe(`session-${sessionId}`);
-    pusherChannel.bind('vote', (data) => {
-      if (data.choice === 'A') votesA++;
-      else if (data.choice === 'B') votesB++;
-      updateVoteBars();
-    });
+      pusherChannel = pusherInstance.subscribe(`session-${sessionId}`);
+      pusherChannel.bind('vote', (data) => {
+        console.log('[WYR] Vote received:', data.choice);
+        if (data.choice === 'A') votesA++;
+        else if (data.choice === 'B') votesB++;
+        updateVoteBars();
+      });
+    } catch(e) {
+      console.error('[WYR] Pusher init error:', e);
+    }
   }
 
   function closeVoting() {

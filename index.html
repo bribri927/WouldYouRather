@@ -194,74 +194,74 @@
     .disc-text { font-size: 14px; color: #e8e8e8; line-height: 1.5; font-weight: 600; }
     .disc-loading { color: #FFD700; font-style: italic; }
 
-    /* VOTING PANEL */
-    .voting-panel {
-      background: #1a1a1a; border-radius: 12px;
-      padding: 0.9rem 1.1rem;
-      display: none;
-      flex-direction: column;
+    /* VOTING BANNER */
+    .voting-banner {
+      background: #1a1a1a;
+      border-radius: 14px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      display: flex;
       align-items: center;
-      gap: 10px;
-      min-width: 160px;
+      gap: 16px;
+      border: 2px solid #FFD700;
+      position: relative;
     }
-    .voting-panel.visible { display: flex; }
-
-    .start-vote-btn {
-      background: #27ae60; color: #fff;
-      border: 2.5px solid #FFD700; border-radius: 10px;
-      padding: 8px 18px; font-size: 14px;
-      font-family: 'Nunito', sans-serif; font-weight: 900;
-      cursor: pointer; box-shadow: 3px 3px 0 rgba(255,215,0,0.4);
-      transition: transform 0.1s; white-space: nowrap;
-      display: none;
+    .voting-banner-qr { flex-shrink: 0; text-align: center; }
+    .voting-banner-qr .qr-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.1em; color: #FFD700; margin-bottom: 6px;
     }
-    .start-vote-btn.visible { display: block; }
-    .start-vote-btn:hover { transform: translate(-1px,-1px); }
-
-    .qr-section { display: none; flex-direction: column; align-items: center; gap: 8px; }
-    .qr-section.visible { display: flex; }
-    .qr-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #FFD700; }
-    #qrcode canvas, #qrcode img { border-radius: 8px; }
-
-    .short-url-wrap {
-      text-align: center;
-      margin-top: 6px;
+    #qrcode canvas, #qrcode img { border-radius: 6px; display: block; }
+    .voting-banner-mid { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .voting-banner-title {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 20px; color: #FFD700; letter-spacing: 0.05em;
     }
+    .short-url-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .short-url-label {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: #aaa;
-      margin-bottom: 3px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.1em; color: #aaa; white-space: nowrap;
     }
     .short-url {
-      font-size: 13px;
-      font-weight: 900;
-      color: #FFD700;
+      font-size: 15px; font-weight: 900; color: #FFD700;
       background: rgba(255,255,255,0.08);
       border: 1.5px solid rgba(255,215,0,0.3);
-      border-radius: 6px;
-      padding: 4px 8px;
+      border-radius: 6px; padding: 4px 10px;
       letter-spacing: 0.02em;
-      word-break: break-all;
     }
-
-    .live-tally {
-      display: none; flex-direction: column; gap: 4px; width: 100%;
+    .live-tally { display: flex; flex-direction: column; gap: 5px; }
+    .tally-row { display: flex; align-items: center; gap: 8px; }
+    .tally-letter-a {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 16px; color: #7ec8f5; min-width: 16px;
     }
-    .live-tally.visible { display: flex; }
-    .tally-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #aaa; text-align: center; }
-    .tally-row { display: flex; align-items: center; gap: 6px; }
-    .tally-letter { font-family: 'Black Han Sans', sans-serif; font-size: 16px; color: #FFD700; min-width: 16px; }
+    .tally-letter-b {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 16px; color: #c9a8f5; min-width: 16px;
+    }
     .tally-track { flex: 1; background: rgba(255,255,255,0.1); border-radius: 4px; height: 8px; overflow: hidden; }
     .tally-fill { height: 100%; border-radius: 4px; background: #FFD700; transition: width 0.4s ease; width: 0%; }
     .tally-num { font-size: 13px; font-weight: 900; color: #fff; min-width: 24px; text-align: right; }
+    .vote-count-total { font-size: 11px; color: #aaa; font-weight: 700; }
+    .close-vote-btn {
+      position: absolute; top: 8px; right: 10px;
+      background: none; border: none; color: #aaa;
+      font-size: 14px; font-weight: 700; cursor: pointer; padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .close-vote-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
 
-    .vote-count-total { font-size: 12px; color: #aaa; font-weight: 700; text-align: center; }
-
-    /* CREDIT */
-    .credit { text-align: center; font-size: 12px; font-weight: 700; color: rgba(0,0,0,0.3); margin-top: 1rem; }
+    .start-vote-btn {
+      background: #27ae60; color: #fff;
+      border: 2.5px solid #1a1a1a; border-radius: 10px;
+      padding: 10px 20px; font-size: 14px;
+      font-family: 'Nunito', sans-serif; font-weight: 900;
+      cursor: pointer; box-shadow: 4px 4px 0 #1a1a1a;
+      transition: transform 0.1s; white-space: nowrap;
+      display: none; align-self: flex-end;
+    }
+    .start-vote-btn.visible { display: block; }
+    .start-vote-btn:hover { transform: translate(-1px,-1px); } text-align: center; font-size: 12px; font-weight: 700; color: rgba(0,0,0,0.3); margin-top: 1rem; }
     .credit a { color: rgba(0,0,0,0.4); }
 
     @media (max-width: 600px) {
@@ -323,6 +323,35 @@
   </div>
   <div class="tag-row" id="tags"></div>
 
+  <!-- VOTING BANNER -- appears above arena when voting is active -->
+  <div class="voting-banner" id="votingBanner" style="display:none">
+    <div class="voting-banner-qr">
+      <div class="qr-label">📲 Scan to vote</div>
+      <div id="qrcode"></div>
+    </div>
+    <div class="voting-banner-mid">
+      <div class="voting-banner-title">LIVE VOTING OPEN</div>
+      <div class="short-url-wrap" id="shortUrlWrap">
+        <div class="short-url-label">Or go to</div>
+        <div class="short-url" id="shortUrl">Loading...</div>
+      </div>
+      <div class="live-tally" id="liveTally">
+        <div class="tally-row">
+          <div class="tally-letter-a">A</div>
+          <div class="tally-track"><div class="tally-fill" id="tallyA"></div></div>
+          <div class="tally-num" id="tallyNumA">0</div>
+        </div>
+        <div class="tally-row">
+          <div class="tally-letter-b">B</div>
+          <div class="tally-track"><div class="tally-fill" id="tallyB"></div></div>
+          <div class="tally-num" id="tallyNumB">0</div>
+        </div>
+        <div class="vote-count-total" id="totalVotes">0 votes</div>
+      </div>
+    </div>
+    <button class="close-vote-btn" onclick="closeVoting()">✕ Close</button>
+  </div>
+
   <!-- ARENA -->
   <div class="arena" id="arena">
     <div class="choice-card choice-a">
@@ -356,36 +385,9 @@
       <span class="disc-label">Discussion</span>
       <p class="disc-text" id="discText">Your discussion prompt will appear here after generating.</p>
     </div>
-
-    <!-- VOTING PANEL -->
     <button class="start-vote-btn" id="startVoteBtn" onclick="startVoting()">
       📲 Start Live Voting
     </button>
-
-    <div class="voting-panel" id="votingPanel">
-      <div class="qr-section" id="qrSection">
-        <div class="qr-label">Scan to vote</div>
-        <div id="qrcode"></div>
-        <div class="short-url-wrap" id="shortUrlWrap" style="display:none">
-          <div class="short-url-label">Or go to</div>
-          <div class="short-url" id="shortUrl">...</div>
-        </div>
-      </div>
-      <div class="live-tally" id="liveTally">
-        <div class="tally-label">Live votes</div>
-        <div class="tally-row">
-          <div class="tally-letter">A</div>
-          <div class="tally-track"><div class="tally-fill" id="tallyA"></div></div>
-          <div class="tally-num" id="tallyNumA">0</div>
-        </div>
-        <div class="tally-row">
-          <div class="tally-letter">B</div>
-          <div class="tally-track"><div class="tally-fill" id="tallyB"></div></div>
-          <div class="tally-num" id="tallyNumB">0</div>
-        </div>
-        <div class="vote-count-total" id="totalVotes">0 votes</div>
-      </div>
-    </div>
   </div>
 
   <p class="credit">Built with ❤️ for educators &mdash; <a href="https://teacherhive.app" target="_blank">TeacherHive</a></p>
@@ -492,17 +494,18 @@
   function resetVotes() {
     votesA = 0; votesB = 0;
     updateVoteBars();
-    document.getElementById('votingPanel').classList.remove('visible');
+    document.getElementById('votingBanner').style.display = 'none';
     document.getElementById('startVoteBtn').classList.remove('visible');
-    document.getElementById('qrSection').classList.remove('visible');
-    document.getElementById('liveTally').classList.remove('visible');
     document.getElementById('voteBarsA').classList.remove('visible');
     document.getElementById('voteBarsB').classList.remove('visible');
     document.getElementById('qrcode').innerHTML = '';
-    document.getElementById('shortUrlWrap').style.display = 'none';
-    document.getElementById('shortUrl').textContent = '...';
-    if (pusherChannel && pusherInstance) {
-      pusherInstance.unsubscribe(`session-${sessionId}`);
+    document.getElementById('shortUrl').textContent = 'Loading...';
+    if (pusherInstance) {
+      try {
+        if (pusherChannel) pusherInstance.unsubscribe(`session-${sessionId}`);
+        pusherInstance.disconnect();
+      } catch(e) {}
+      pusherInstance = null;
       pusherChannel = null;
     }
   }
@@ -526,59 +529,86 @@
   async function startVoting() {
     if (!currentOptA || !currentOptB) return;
 
-    sessionId = generateSessionId();
+    // Reset votes and generate new session
     votesA = 0; votesB = 0;
+    sessionId = generateSessionId();
     updateVoteBars();
-    const expires = 0;
-    const voteUrl = `${window.location.origin}/vote.html?s=${sessionId}&a=${encodeURIComponent(currentOptA)}&b=${encodeURIComponent(currentOptB)}${expires ? '&exp=' + expires : ''}`;
 
+    const voteUrl = `${window.location.origin}/vote.html?s=${sessionId}&a=${encodeURIComponent(currentOptA)}&b=${encodeURIComponent(currentOptB)}`;
+
+    // Show banner immediately
+    const banner = document.getElementById('votingBanner');
+    banner.style.display = 'flex';
+    document.getElementById('startVoteBtn').classList.remove('visible');
+    document.getElementById('voteBarsA').classList.add('visible');
+    document.getElementById('voteBarsB').classList.add('visible');
+
+    // Generate QR code
     document.getElementById('qrcode').innerHTML = '';
     new QRCode(document.getElementById('qrcode'), {
       text: voteUrl,
-      width: 140,
-      height: 140,
+      width: 120,
+      height: 120,
       colorDark: '#1a1a1a',
       colorLight: '#ffffff',
     });
 
-    // Fetch short URL from TinyURL
-    const shortUrlWrap = document.getElementById('shortUrlWrap');
+    // Fetch short URL
     const shortUrlEl = document.getElementById('shortUrl');
-    shortUrlWrap.style.display = 'block';
-    shortUrlEl.textContent = 'Shortening...';
+    shortUrlEl.textContent = 'Loading...';
     try {
       const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(voteUrl)}`);
       if (res.ok) {
         const short = await res.text();
         shortUrlEl.textContent = short.replace('https://', '');
       } else {
-        shortUrlEl.textContent = 'See QR code above';
+        shortUrlEl.textContent = window.location.hostname + '/vote';
       }
     } catch (e) {
-      shortUrlEl.textContent = 'See QR code above';
+      shortUrlEl.textContent = window.location.hostname + '/vote';
     }
 
-    if (!pusherInstance) {
-      pusherInstance = new Pusher(PUSHER_KEY, { cluster: PUSHER_CLUSTER });
-    } else if (pusherChannel) {
-      pusherInstance.unsubscribe(`session-${sessionId}`);
+    // Fresh Pusher connection every time
+    if (pusherInstance) {
+      try { pusherInstance.disconnect(); } catch(e) {}
+      pusherInstance = null;
+      pusherChannel = null;
     }
+
+    pusherInstance = new Pusher(PUSHER_KEY, {
+      cluster: PUSHER_CLUSTER,
+      forceTLS: true,
+    });
+
+    pusherInstance.connection.bind('error', (err) => {
+      console.error('[WYR] Pusher error:', err);
+    });
 
     pusherChannel = pusherInstance.subscribe(`session-${sessionId}`);
     pusherChannel.bind('vote', (data) => {
       if (data.choice === 'A') votesA++;
       else if (data.choice === 'B') votesB++;
       updateVoteBars();
-      document.getElementById('voteBarsA').classList.add('visible');
-      document.getElementById('voteBarsB').classList.add('visible');
     });
+  }
 
-    document.getElementById('startVoteBtn').classList.remove('visible');
-    document.getElementById('votingPanel').classList.add('visible');
-    document.getElementById('qrSection').classList.add('visible');
-    document.getElementById('liveTally').classList.add('visible');
-    document.getElementById('voteBarsA').classList.add('visible');
-    document.getElementById('voteBarsB').classList.add('visible');
+  function closeVoting() {
+    document.getElementById('votingBanner').style.display = 'none';
+    document.getElementById('qrcode').innerHTML = '';
+    document.getElementById('shortUrl').textContent = 'Loading...';
+    document.getElementById('voteBarsA').classList.remove('visible');
+    document.getElementById('voteBarsB').classList.remove('visible');
+    document.getElementById('startVoteBtn').classList.add('visible');
+    votesA = 0; votesB = 0;
+    updateVoteBars();
+    if (pusherInstance) {
+      try {
+        if (pusherChannel) pusherInstance.unsubscribe(`session-${sessionId}`);
+        pusherInstance.disconnect();
+      } catch(e) {}
+      pusherInstance = null;
+      pusherChannel = null;
+    }
   }
 
   async function generate() {

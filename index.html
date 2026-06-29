@@ -65,15 +65,6 @@
     .subject-group { transition: opacity 0.2s; }
     .subject-group.hidden { opacity: 0.3; pointer-events: none; }
 
-    .timer-group { display: flex; flex-direction: column; gap: 4px; min-width: 100px; }
-    .timer-group label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #5a4000; }
-    .timer-group select {
-      background: #fff; border: 2.5px solid #1a1a1a; border-radius: 10px;
-      padding: 8px 10px; font-size: 14px;
-      font-family: 'Nunito', sans-serif; font-weight: 700; color: #1a1a1a;
-      cursor: pointer; box-shadow: 3px 3px 0 #1a1a1a;
-    }
-
     .gen-btn {
       background: #c0392b; color: #fff; border: 2.5px solid #1a1a1a;
       border-radius: 10px; padding: 10px 24px; font-size: 15px;
@@ -84,47 +75,6 @@
     .gen-btn:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 #1a1a1a; }
     .gen-btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #1a1a1a; }
     .gen-btn:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
-
-    /* TIMER BAR */
-    .timer-section {
-      display: none;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 0.75rem;
-      background: #1a1a1a;
-      border-radius: 12px;
-      padding: 0.75rem 1.25rem;
-    }
-    .timer-section.visible { display: flex; }
-    .timer-countdown {
-      font-family: 'Black Han Sans', sans-serif;
-      font-size: 42px;
-      color: #FFD700;
-      min-width: 56px;
-      text-align: center;
-      line-height: 1;
-    }
-    .timer-countdown.urgent { color: #e74c3c; }
-    .timer-bar-wrap {
-      flex: 1;
-      background: rgba(255,255,255,0.15);
-      border-radius: 8px;
-      height: 14px;
-      overflow: hidden;
-    }
-    .timer-bar {
-      height: 100%;
-      background: #FFD700;
-      border-radius: 8px;
-      transition: width 1s linear, background 0.3s;
-      width: 100%;
-    }
-    .timer-bar.urgent { background: #e74c3c; }
-    .timer-label {
-      font-size: 12px; font-weight: 700; color: #aaa;
-      text-transform: uppercase; letter-spacing: 0.1em;
-      white-space: nowrap;
-    }
 
     /* VIBE BADGE */
     .vibe-badge { display: none; justify-content: center; margin-bottom: 0.75rem; }
@@ -365,26 +315,7 @@
         <option value="snarky" id="snarky-opt" style="display:none">😏 Snarky (Staff Only)</option>
       </select>
     </div>
-    <div class="timer-group">
-      <label for="timerDur">Timer</label>
-      <select id="timerDur">
-        <option value="0">No timer</option>
-        <option value="15">15 sec</option>
-        <option value="30" selected>30 sec</option>
-        <option value="45">45 sec</option>
-        <option value="60">60 sec</option>
-      </select>
-    </div>
     <button class="gen-btn" onclick="generate()">Generate ⚡</button>
-  </div>
-
-  <!-- TIMER BAR -->
-  <div class="timer-section" id="timerSection">
-    <div class="timer-countdown" id="timerCountdown">30</div>
-    <div class="timer-bar-wrap">
-      <div class="timer-bar" id="timerBar"></div>
-    </div>
-    <div class="timer-label">seconds left</div>
   </div>
 
   <div class="vibe-badge" id="vibeBadge">
@@ -483,9 +414,6 @@
   let sessionId = null;
   let pusherChannel = null;
   let pusherInstance = null;
-  let timerInterval = null;
-  let timerSeconds = 0;
-  let timerTotal = 0;
   let votesA = 0;
   let votesB = 0;
   let currentOptA = '';
@@ -578,42 +506,6 @@
       pusherChannel = null;
     }
   }
-
-  function stopTimer() {
-    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-    document.getElementById('timerSection').classList.remove('visible');
-  }
-
-  function startTimer(seconds) {
-    stopTimer();
-    if (!seconds || seconds <= 0) return;
-    timerTotal = seconds;
-    timerSeconds = seconds;
-    const section = document.getElementById('timerSection');
-    const countdown = document.getElementById('timerCountdown');
-    const bar = document.getElementById('timerBar');
-    section.classList.add('visible');
-    countdown.textContent = timerSeconds;
-    countdown.classList.remove('urgent');
-    bar.classList.remove('urgent');
-    bar.style.width = '100%';
-
-    timerInterval = setInterval(() => {
-      timerSeconds--;
-      countdown.textContent = timerSeconds;
-      const pct = (timerSeconds / timerTotal) * 100;
-      bar.style.width = pct + '%';
-      if (timerSeconds <= 5) {
-        countdown.classList.add('urgent');
-        bar.classList.add('urgent');
-      }
-      if (timerSeconds <= 0) {
-        stopTimer();
-        questionActive = false;
-      }
-    }, 1000);
-  }
-
   function updateVoteBars() {
     const total = votesA + votesB;
     const pctA = total > 0 ? Math.round((votesA / total) * 100) : 0;
@@ -637,10 +529,7 @@
     sessionId = generateSessionId();
     votesA = 0; votesB = 0;
     updateVoteBars();
-
-    const timerDur = parseInt(document.getElementById('timerDur').value) || 0;
-    const expires = timerDur > 0 ? Date.now() + (timerDur * 1000) : 0;
-
+    const expires = 0;
     const voteUrl = `${window.location.origin}/vote.html?s=${sessionId}&a=${encodeURIComponent(currentOptA)}&b=${encodeURIComponent(currentOptB)}${expires ? '&exp=' + expires : ''}`;
 
     document.getElementById('qrcode').innerHTML = '';
@@ -696,13 +585,11 @@
     const grade = gradeEl.value;
     const subject = document.getElementById('subject').value;
     const vibe = vibeEl.value;
-    const timerDur = parseInt(document.getElementById('timerDur').value) || 0;
     const btn = document.querySelector('.gen-btn');
 
     btn.disabled = true;
     btn.textContent = 'Thinking...';
     questionActive = false;
-    stopTimer();
     resetVotes();
 
     const textA = document.getElementById('textA');
@@ -746,8 +633,6 @@
 
       questionActive = true;
       document.getElementById('startVoteBtn').classList.add('visible');
-
-      if (timerDur > 0) startTimer(timerDur);
 
     } catch (err) {
       textA.textContent = 'Oops!';

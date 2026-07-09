@@ -1,124 +1,138 @@
+// netlify/functions/generate.js
+// Would You Rather generator with school-safe guardrails, a regex backstop,
+// optional topic focus, and anti-repeat via an exclude list.
+
+// --- Banned-content backstop -------------------------------------------------
+// If a generated dilemma trips this, we throw it out and regenerate.
+// Word-boundary matching so we don't false-positive on things like "skill".
+const BANNED = [
+  "die","dies","died","dying","death","dead","kill","killed","killing",
+  "suicide","self-harm","self harm","hurt yourself","harm yourself",
+  "overdose","cut yourself","hang yourself",
+  "gun","shoot","shooting","stab","weapon","bomb","murder","violence","violent",
+  "abuse","abused","assault","molest",
+  "cancer","terminal","dementia","coma","overdose",
+  "drunk","alcohol","vape","vaping","weed","drugs","high on",
+  "sexy","sexual","nude","naked","hookup",
+  "fat","ugly","anorexia","starve","starving",
+  "hate crime","racist","suicidal"
+];
+const BANNED_RE = new RegExp(
+  "\\b(" + BANNED.map(w => w.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")).join("|") + ")\\b",
+  "i"
+);
+
+function isUnsafe(q) {
+  const blob = `${q.optionA} ${q.optionB} ${q.discussion || ""}`;
+  return BANNED_RE.test(blob);
+}
+
+// --- Prompt builder ----------------------------------------------------------
+function buildPrompt({ grade, subject, vibe, topic, exclude }) {
+  const focusLine = topic && topic.trim()
+    ? `Where it fits naturally, theme the dilemma around "${topic.trim()}", but keep it accessible and don't require prior knowledge of it.`
+    : "";
+
+  const excludeLine = (exclude && exclude.length)
+    ? `Do NOT repeat or closely resemble any of these already-used dilemmas:\n- ${exclude.slice(-20).join("\n- ")}\nMake this one clearly different in topic and structure.`
+    : "";
+
+  // A random angle nudges the model off its single highest-probability answer.
+  const angles = ["superpowers","time travel","food","animals","technology",
+    "school life","seasons","space","sports","music","art","the future",
+    "everyday choices","hypothetical trade-offs","curiosity and wonder"];
+  const angle = angles[Math.floor(Math.random() * angles.length)];
+
+  return `You generate one "Would You Rather" dilemma shown to K-12 STUDENTS on a classroom screen.
+
+AUDIENCE: Grade band ${grade || "K-12"}${subject ? `, subject focus: ${subject}` : ""}.
+TONE: ${vibe || "fun and engaging"}.
+${focusLine}
+
+HARD SAFETY RULES. Never generate a dilemma that involves, references, or implies any of the following, even as a joke, hypothetical, or "thought-provoking" angle:
+- death, dying, when or how someone dies, or "the date of your death"
+- suicide, self-harm, or harming oneself
+- violence, weapons, injury, or harm to others
+- serious illness, medical trauma, or disability framed negatively
+- abuse, neglect, or unsafe home/family situations
+- drugs, alcohol, vaping, or other substances
+- romantic or sexual content
+- body image, weight, appearance judgments, or eating
+- family money problems or poverty
+- targeting anyone's race, religion, gender, or orientation
+- anything a teacher would be uncomfortable projecting on a screen
+
+"Thought-provoking" means intellectually interesting and imaginative (ethical trade-offs, curiosity, what-ifs), NOT dark, morbid, or emotionally heavy. If an idea touches anything above, discard it and pick a lighter angle.
+
+For variety this round, lean toward the angle of: ${angle}.
+
+${excludeLine}
+
+Return ONLY valid JSON, no markdown, no backticks, in exactly this shape:
+{"optionA":"Would you rather ...","optionB":"or ...","discussion":"one short discussion prompt for the class"}`;
+}
+
+// --- Anthropic call ----------------------------------------------------------
+async function generateOnce(input) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-6",
+      max_tokens: 400,
+      temperature: 1.0,
+      messages: [{ role: "user", content: buildPrompt(input) }],
+    }),
+  });
+
+  const data = await res.json();
+  let text = (data.content && data.content[0] && data.content[0].text) || "";
+  text = text.replace(/```json|```/g, "").trim();
+
+  const parsed = JSON.parse(text);
+  if (!parsed.optionA || !parsed.optionB) throw new Error("bad_shape");
+  return parsed;
+}
+
+// --- Handler -----------------------------------------------------------------
 exports.handler = async (event) => {
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
-  }
-
-  const { grade, subject, vibe } = JSON.parse(event.body || "{}");
-
-  const isCringe = vibe === "cringe";
-  const isControversial = vibe === "controversial educational trends";
-  const isSnarky = vibe === "snarky";
-
-  // Variety seed -- pick a random angle to push the AI toward different territory each time
-  const angles = [
-    "Focus on a surprising or unexpected scenario.",
-    "Make one option glamorous and one option chaotic.",
-    "Use a specific real-world context rather than a generic one.",
-    "Make both options sound equally appealing in different ways.",
-    "Make both options sound equally terrible in different ways.",
-    "Set it in an unusual or imaginative location or situation.",
-    "Use a time or era as part of the scenario.",
-    "Ground it in a very specific relatable moment.",
-    "Make it absurd but still thought-provoking.",
-    "Make it deceptively simple -- the debate is in the details.",
-    "Use a comparison between two very different experiences.",
-    "Tie it to a real skill, strength, or weakness people identify with.",
-  ];
-  const varietySeed = angles[Math.floor(Math.random() * angles.length)];
-
-  let systemPrompt;
-
-  if (isCringe) {
-    systemPrompt = `You are generating "Would You Rather" questions for educators that are delightfully cringe-worthy and self-aware about school culture. Think: awkward professional development moments, the pain of back-to-school nights, overused edu-jargon, relatable staff room suffering, nightmare parent emails, being volun-told for committees, the one colleague who replies-all, laminator drama, and the slow death of a mandatory fun activity. Keep it funny, warm, and 100% safe for a staff meeting.
-Variety instruction: ${varietySeed}
-Return ONLY valid JSON, no markdown, no backticks, no preamble:
-{
-  "optionA": "short punchy cringe option (max 12 words)",
-  "optionB": "short punchy cringe option (max 12 words)",
-  "discussion": "A funny follow-up question or reflection prompt for the group (max 25 words)",
-  "tags": ["tag1", "tag2"]
-}`;
-
-  } else if (isControversial) {
-    systemPrompt = `You are generating "Would You Rather" questions for educators about genuinely controversial current debates in education. Focus ONLY on educational trends and pedagogy -- things like: AI in classrooms, phone bans, grades vs standards-based grading, homework, open floor plans, social-emotional learning mandates, reading wars (phonics vs whole language), edtech over-reliance, tenure, standardized testing, ChatGPT policies, professional development requirements, etc. No easy answers, no partisan politics. Spicy but professional.
-Variety instruction: ${varietySeed}
-Return ONLY valid JSON, no markdown, no backticks, no preamble:
-{
-  "optionA": "short punchy option (max 12 words)",
-  "optionB": "short punchy option (max 12 words)",
-  "discussion": "One sharp discussion question that surfaces the real tension behind the choice (max 25 words)",
-  "tags": ["tag1", "tag2"]
-}`;
-
-  } else if (isSnarky) {
-    systemPrompt = `You are generating "Would You Rather" questions for educators with a dry, snarky, self-deprecating wit. Think: passive-aggressive staff emails, the 47th iteration of a strategic plan, being asked to "do more with less," mandatory fun, pointless meetings that could have been emails, the laminator hoarder in room 12, and the eternal optimism of August vs. the reality of October. Sharp, clever, and a little savage -- but never mean-spirited toward students or colleagues.
-Variety instruction: ${varietySeed}
-Return ONLY valid JSON, no markdown, no backticks, no preamble:
-{
-  "optionA": "short punchy snarky option (max 12 words)",
-  "optionB": "short punchy snarky option (max 12 words)",
-  "discussion": "A dry, witty follow-up that gets the room nodding in painful recognition (max 25 words)",
-  "tags": ["tag1", "tag2"]
-}`;
-
-  } else if (vibe === "pop culture and trending topics") {
-    systemPrompt = `You are generating "Would You Rather" questions packed with SPECIFIC, CURRENT pop culture references from 2024-2025. Use real names, real shows, real trends. Draw from: music (Sabrina Carpenter, Chappell Roan, Kendrick Lamar, Taylor Swift eras, Beyonce Cowboy Carter, Morgan Wallen, Doechii, Billie Eilish), movies/TV (Wicked, Inside Out 2, Moana 2, Squid Game S2, Severance, The Bear, White Lotus S3, Outer Banks, Adolescence), sports (Caitlin Clark, LeBron, Shedeur Sanders, NIL era), social media (brain rot, very demure, brat summer, NPC streaming, BookTok, BeReal), gaming (Fortnite, Minecraft Movie, Roblox, Balatro), viral moments and memes. Name names. Be SPECIFIC. Age-appropriate for grade band.
-Variety instruction: ${varietySeed}
-Return ONLY valid JSON, no markdown, no backticks, no preamble:
-{
-  "optionA": "punchy pop culture option with specific reference (max 12 words)",
-  "optionB": "punchy pop culture option with specific reference (max 12 words)",
-  "discussion": "One engaging follow-up that sparks real debate (max 25 words)",
-  "tags": ["tag1", "tag2"]
-}`;
-
-  } else {
-    systemPrompt = `You are a creative educator generating "Would You Rather" questions for classroom or staff icebreakers. Make them genuinely surprising, memorable, and age-appropriate for the grade band. Options should spark real debate -- no obvious right answer, roughly equal appeal. Push beyond the first obvious idea that comes to mind and go somewhere unexpected or specific.
-Variety instruction: ${varietySeed}
-Return ONLY valid JSON, no markdown, no backticks, no preamble:
-{
-  "optionA": "short punchy option (max 12 words)",
-  "optionB": "short punchy option (max 12 words)",
-  "discussion": "One engaging discussion question connecting the choice to real thinking or learning (max 25 words)",
-  "tags": ["tag1", "tag2"]
-}`;
-  }
-
-  const isStaffOnly = isCringe || isControversial || isSnarky;
-  const userPrompt = isStaffOnly
-    ? `Create a Would You Rather for: audience: ${grade}, vibe: ${vibe}. Be creative and avoid repeating common scenarios.`
-    : `Create a Would You Rather for: grade band: ${grade}, subject/theme: ${subject}, vibe: ${vibe}. Be creative and avoid repeating common scenarios.`;
-
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1000,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userPrompt }]
-      })
-    });
+    const input = JSON.parse(event.body || "{}");
 
-    const data = await response.json();
-    const raw = data.content.map(b => b.text || "").join("");
-    const clean = raw.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(clean);
+    // Try up to 3 times to get a safe, well-formed question.
+    let q = null;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const candidate = await generateOnce(input);
+        if (!isUnsafe(candidate)) { q = candidate; break; }
+      } catch (e) {
+        // parse or shape error, just retry
+      }
+    }
+
+    // Safe fallback if all attempts failed or kept tripping the filter.
+    if (!q) {
+      q = {
+        optionA: "Would you rather be able to fly",
+        optionB: "or be able to turn invisible",
+        discussion: "What is the first thing you would do with your power?"
+      };
+    }
 
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(parsed)
+      body: JSON.stringify(q),
     };
-  } catch (err) {
+  } catch (e) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: e.message }),
     };
   }
 };

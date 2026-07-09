@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Would You Rather? | Classroom Icebreaker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #FFD700;
+      font-family: 'Nunito', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 1.5rem 1rem 2rem;
+    }
+
+    .container { width: 100%; max-width: 960px; }
+
+    /* HEADER */
+    .header { text-align: center; margin-bottom: 1.25rem; }
+    .eyebrow {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.18em;
+      color: #7a5a00; text-transform: uppercase; margin-bottom: 4px;
+    }
+    .main-title {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: clamp(40px, 7vw, 76px);
+      color: #1a1a1a; line-height: 1;
+    }
+    .main-title span { color: #c0392b; }
+
+    /* CONTROLS */
+    .controls {
+      background: rgba(0,0,0,0.08);
+      border-radius: 16px;
+      border: 2px solid rgba(0,0,0,0.12);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+    .ctrl-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 130px; }
+    .ctrl-group label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.12em; color: #5a4000;
+    }
+    .ctrl-group select {
+      background: #fff; border: 2.5px solid #1a1a1a; border-radius: 10px;
+      padding: 8px 32px 8px 10px; font-size: 14px;
+      font-family: 'Nunito', sans-serif; font-weight: 700; color: #1a1a1a;
+      cursor: pointer; box-shadow: 3px 3px 0 #1a1a1a; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231a1a1a' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+    }
+    .ctrl-group select:focus { outline: none; box-shadow: 4px 4px 0 #1a1a1a; }
+    .subject-group { transition: opacity 0.2s; }
+    .subject-group.hidden { opacity: 0.3; pointer-events: none; }
+
+    /* OPTIONAL TOPIC FOCUS */
+    .topic-row {
+      background: rgba(0,0,0,0.08);
+      border-radius: 16px;
+      border: 2px solid rgba(0,0,0,0.12);
+      padding: 0.75rem 1.25rem;
+      margin-bottom: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .topic-row label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.12em; color: #5a4000;
+    }
+    .topic-input {
+      background: #fff; border: 2.5px solid #1a1a1a; border-radius: 10px;
+      padding: 9px 12px; font-size: 14px;
+      font-family: 'Nunito', sans-serif; font-weight: 700; color: #1a1a1a;
+      box-shadow: 3px 3px 0 #1a1a1a; width: 100%;
+    }
+    .topic-input:focus { outline: none; box-shadow: 4px 4px 0 #1a1a1a; }
+    .topic-input::placeholder { color: #999; font-weight: 600; }
+
+    .gen-btn {
+      background: #c0392b; color: #fff; border: 2.5px solid #1a1a1a;
+      border-radius: 10px; padding: 10px 24px; font-size: 15px;
+      font-family: 'Nunito', sans-serif; font-weight: 900; cursor: pointer;
+      box-shadow: 4px 4px 0 #1a1a1a; transition: transform 0.1s, box-shadow 0.1s;
+      white-space: nowrap; align-self: flex-end;
+    }
+    .gen-btn:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 #1a1a1a; }
+    .gen-btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #1a1a1a; }
+    .gen-btn:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
+
+    /* VIBE BADGE */
+    .vibe-badge { display: none; justify-content: center; margin-bottom: 0.75rem; }
+    .vibe-badge.visible { display: flex; }
+    .vibe-pill {
+      font-size: 13px; font-weight: 900; text-transform: uppercase;
+      letter-spacing: 0.1em; padding: 5px 14px; border-radius: 20px;
+      border: 2px solid #1a1a1a;
+    }
+    .vibe-cringe { background: #ff6b9d; color: #1a1a1a; }
+    .vibe-controversial { background: #ff4500; color: #fff; }
+    .vibe-snarky { background: #2ecc71; color: #1a1a1a; }
+
+    /* TAGS */
+    .tag-row {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      margin-bottom: 0.75rem; min-height: 24px; justify-content: center;
+    }
+    .tag {
+      background: rgba(0,0,0,0.15); border-radius: 20px;
+      padding: 3px 12px; font-size: 12px; font-weight: 700;
+      color: #3a2800; border: 1.5px solid rgba(0,0,0,0.15);
+    }
+
+    /* ARENA */
+    .arena {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .choice-card {
+      border-radius: 18px; border: 3px solid #1a1a1a;
+      padding: 1.5rem 1.25rem; text-align: center;
+      min-height: 180px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      box-shadow: 6px 6px 0 #1a1a1a;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .choice-card:hover { transform: scale(1.015); box-shadow: 8px 8px 0 #1a1a1a; }
+    .choice-a { background: #2980b9; }
+    .choice-b { background: #8e44ad; }
+    .vibe-cringe-active .choice-a { background: #ff6b9d; }
+    .vibe-cringe-active .choice-b { background: #ff9f43; }
+    .vibe-controversial-active .choice-a { background: #c0392b; }
+    .vibe-controversial-active .choice-b { background: #2c3e50; }
+    .vibe-snarky-active .choice-a { background: #27ae60; }
+    .vibe-snarky-active .choice-b { background: #16a085; }
+    .choice-letter {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: clamp(48px, 7vw, 68px);
+      line-height: 1; color: rgba(255,255,255,0.2); margin-bottom: 6px;
+    }
+    .choice-text {
+      font-size: clamp(15px, 2.2vw, 21px);
+      font-weight: 900; color: #fff; line-height: 1.3;
+    }
+    .placeholder-text { color: rgba(255,255,255,0.5); font-style: italic; font-weight: 700; }
+
+    /* VOTE BARS */
+    .vote-bars {
+      display: none;
+      gap: 0;
+      margin-top: 10px;
+      width: 100%;
+    }
+    .vote-bars.visible { display: flex; flex-direction: column; gap: 6px; }
+    .vote-row {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .vote-row-label {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 18px; color: #fff; min-width: 24px;
+    }
+    .vote-bar-track {
+      flex: 1; background: rgba(255,255,255,0.2);
+      border-radius: 6px; height: 10px; overflow: hidden;
+    }
+    .vote-bar-fill {
+      height: 100%; border-radius: 6px;
+      background: rgba(255,255,255,0.85);
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+    .vote-count {
+      font-size: 13px; font-weight: 900; color: #fff;
+      min-width: 32px; text-align: right;
+    }
+
+    .or-badge {
+      background: #1a1a1a; color: #FFD700;
+      font-family: 'Black Han Sans', sans-serif; font-size: 20px;
+      width: 56px; height: 56px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 3px solid #FFD700; box-shadow: 3px 3px 0 rgba(0,0,0,0.25);
+      flex-shrink: 0;
+    }
+
+    /* BOTTOM ROW */
+    .bottom-row {
+      display: flex; gap: 12px; align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    /* DISCUSSION */
+    .discussion-bar {
+      flex: 1; min-width: 200px;
+      background: #1a1a1a; border-radius: 12px;
+      padding: 0.9rem 1.1rem;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .disc-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.12em; color: #FFD700; white-space: nowrap; padding-top: 2px;
+    }
+    .disc-text { font-size: 14px; color: #e8e8e8; line-height: 1.5; font-weight: 600; }
+    .disc-loading { color: #FFD700; font-style: italic; }
+
+    /* VOTING BANNER */
+    .voting-banner {
+      background: #1a1a1a;
+      border-radius: 14px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border: 2px solid #FFD700;
+      position: relative;
+    }
+    .voting-banner-qr { flex-shrink: 0; text-align: center; }
+    .voting-banner-qr .qr-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.1em; color: #FFD700; margin-bottom: 6px;
+    }
+    #qrcode canvas, #qrcode img { border-radius: 6px; display: block; }
+    .voting-banner-mid { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .voting-banner-title {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 20px; color: #FFD700; letter-spacing: 0.05em;
+    }
+    .short-url-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .short-url-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.1em; color: #aaa; white-space: nowrap;
+    }
+    .short-url {
+      font-size: 15px; font-weight: 900; color: #FFD700;
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid rgba(255,215,0,0.3);
+      border-radius: 6px; padding: 4px 10px;
+      letter-spacing: 0.02em;
+    }
+    .live-tally { display: flex; flex-direction: column; gap: 5px; }
+    .tally-row { display: flex; align-items: center; gap: 8px; }
+    .tally-letter-a {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 16px; color: #7ec8f5; min-width: 16px;
+    }
+    .tally-letter-b {
+      font-family: 'Black Han Sans', sans-serif;
+      font-size: 16px; color: #c9a8f5; min-width: 16px;
+    }
+    .tally-track { flex: 1; background: rgba(255,255,255,0.1); border-radius: 4px; height: 8px; overflow: hidden; }
+    .tally-fill { height: 100%; border-radius: 4px; background: #FFD700; transition: width 0.4s ease; width: 0%; }
+    .tally-num { font-size: 13px; font-weight: 900; color: #fff; min-width: 24px; text-align: right; }
+    .vote-count-total { font-size: 11px; color: #aaa; font-weight: 700; }
+    .close-vote-btn {
+      position: absolute; top: 8px; right: 10px;
+      background: none; border: none; color: #aaa;
+      font-size: 14px; font-weight: 700; cursor: pointer; padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .close-vote-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
+
+    .start-vote-btn {
+      background: #27ae60; color: #fff;
+      border: 2.5px solid #1a1a1a; border-radius: 10px;
+      padding: 10px 20px; font-size: 14px;
+      font-family: 'Nunito', sans-serif; font-weight: 900;
+      cursor: pointer; box-shadow: 4px 4px 0 #1a1a1a;
+      transition: transform 0.1s; white-space: nowrap;
+      display: none; align-self: flex-end;
+    }
+    .start-vote-btn.visible { display: block; }
+    .start-vote-btn:hover { transform: translate(-1px,-1px); }
+    .credit { text-align: center; font-size: 12px; font-weight: 700; color: rgba(0,0,0,0.3); margin-top: 1rem; }
+    .credit a { color: rgba(0,0,0,0.4); }
+
+    @media (max-width: 600px) {
+      .arena { grid-template-columns: 1fr; }
+      .or-badge { margin: 0 auto; }
+      .controls { flex-direction: column; }
+      .gen-btn { width: 100%; }
+      .bottom-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header class="header">
+    <p class="eyebrow">Classroom Icebreaker</p>
+    <h1 class="main-title">Would You <span>Rather</span>?</h1>
+  </header>
+
+  <div class="controls">
+    <div class="ctrl-group">
+      <label for="grade">Grade band</label>
+      <select id="grade">
+        <option value="6-8" selected>6&ndash;8</option>
+        <option value="9-12">9&ndash;12</option>
+        <option value="staff">Staff / Adult</option>
+      </select>
+    </div>
+    <div class="ctrl-group subject-group" id="subjectGroup">
+      <label for="subject">Subject / theme</label>
+      <select id="subject">
+        <option value="any subject or everyday life">Any / Icebreaker</option>
+        <option value="math and numbers">Math</option>
+        <option value="science and nature">Science</option>
+        <option value="history and social studies">History</option>
+        <option value="language arts and reading">ELA</option>
+        <option value="technology and AI">Technology &amp; AI</option>
+        <option value="art and creativity">Art &amp; Creativity</option>
+        <option value="physical education and health">PE &amp; Health</option>
+        <option value="school life and learning">School Life</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label for="vibe">Vibe</label>
+      <select id="vibe" onchange="handleVibeChange()">
+        <option value="funny and silly">Silly &amp; Fun</option>
+        <option value="thought-provoking and philosophical" selected>Thought-provoking</option>
+        <option value="career and future focused">Career / Future</option>
+        <option value="pop culture and trending topics">Pop Culture</option>
+        <option value="cringe" id="cringe-opt" style="display:none">😬 Cringe (Staff Only)</option>
+        <option value="controversial educational trends" id="controversial-opt" style="display:none">🌶️ Controversial Ed Trends (Staff Only)</option>
+        <option value="snarky" id="snarky-opt" style="display:none">😏 Snarky (Staff Only)</option>
+      </select>
+    </div>
+    <button class="gen-btn" onclick="generate()">Generate ⚡</button>
+  </div>
+
+  <!-- OPTIONAL TOPIC FOCUS -->
+  <div class="topic-row">
+    <label for="topicFocus">Optional focus</label>
+    <input id="topicFocus" class="topic-input" type="text" maxlength="60"
+      placeholder="e.g. fractions, ecosystems, the Roman Empire (leave blank for anything)" />
+  </div>
+
+  <div class="vibe-badge" id="vibeBadge">
+    <span class="vibe-pill" id="vibePill"></span>
+  </div>
+  <div class="tag-row" id="tags"></div>
+
+  <!-- VOTING BANNER -- appears above arena when voting is active -->
+  <div class="voting-banner" id="votingBanner" style="display:none">
+    <div class="voting-banner-qr">
+      <div class="qr-label">📲 Scan to vote</div>
+      <div id="qrcode"></div>
+    </div>
+    <div class="voting-banner-mid">
+      <div class="voting-banner-title">LIVE VOTING OPEN</div>
+      <div class="short-url-wrap" id="shortUrlWrap">
+        <div class="short-url-label">Or go to</div>
+        <div class="short-url" id="shortUrl">Loading...</div>
+      </div>
+      <div class="live-tally" id="liveTally">
+        <div class="tally-row">
+          <div class="tally-letter-a">A</div>
+          <div class="tally-track"><div class="tally-fill" id="tallyA"></div></div>
+          <div class="tally-num" id="tallyNumA">0</div>
+        </div>
+        <div class="tally-row">
+          <div class="tally-letter-b">B</div>
+          <div class="tally-track"><div class="tally-fill" id="tallyB"></div></div>
+          <div class="tally-num" id="tallyNumB">0</div>
+        </div>
+        <div class="vote-count-total" id="totalVotes">0 votes</div>
+      </div>
+    </div>
+    <button class="close-vote-btn" onclick="closeVoting()">✕ Close</button>
+  </div>
+
+  <!-- ARENA -->
+  <div class="arena" id="arena">
+    <div class="choice-card choice-a">
+      <div class="choice-letter">A</div>
+      <p class="choice-text placeholder-text" id="textA">Hit Generate to start!</p>
+      <div class="vote-bars" id="voteBarsA">
+        <div class="vote-row">
+          <div class="vote-row-label">A</div>
+          <div class="vote-bar-track"><div class="vote-bar-fill" id="barFillA"></div></div>
+          <div class="vote-count" id="countA">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="or-badge">OR</div>
+    <div class="choice-card choice-b">
+      <div class="choice-letter">B</div>
+      <p class="choice-text placeholder-text" id="textB">Pick your settings above</p>
+      <div class="vote-bars" id="voteBarsB">
+        <div class="vote-row">
+          <div class="vote-row-label">B</div>
+          <div class="vote-bar-track"><div class="vote-bar-fill" id="barFillB"></div></div>
+          <div class="vote-count" id="countB">0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM ROW -->
+  <div class="bottom-row">
+    <div class="discussion-bar">
+      <span class="disc-label">Discussion</span>
+      <p class="disc-text" id="discText">Your discussion prompt will appear here after generating.</p>
+    </div>
+    <button class="start-vote-btn" id="startVoteBtn" onclick="startVoting()">
+      📲 Start Live Voting
+    </button>
+  </div>
+
+  <p class="credit">Built with ❤️ for educators &mdash; <a href="https://teacherhive.app" target="_blank">TeacherHive</a></p>
+</div>
+
+<script>
+  let PUSHER_KEY = '';
+  let PUSHER_CLUSTER = '';
+  let configLoaded = false;
+
+  const gradeEl = document.getElementById('grade');
+  const vibeEl = document.getElementById('vibe');
+  const subjectGroup = document.getElementById('subjectGroup');
+
+  let sessionId = null;
+  let pusherChannel = null;
+  let pusherInstance = null;
+  let votesA = 0;
+  let votesB = 0;
+  let currentOptA = '';
+  let currentOptB = '';
+  let questionActive = false;
+
+  // Tracks recently shown dilemmas so the server can avoid repeats
+  let usedQuestions = [];
+
+  // Load Pusher config on page load and mark ready
+  fetch('/.netlify/functions/config')
+    .then(r => r.json())
+    .then(cfg => {
+      PUSHER_KEY = cfg.pusherKey;
+      PUSHER_CLUSTER = cfg.pusherCluster;
+      configLoaded = true;
+      console.log('[WYR] Config loaded, cluster:', PUSHER_CLUSTER);
+    })
+    .catch(e => {
+      console.error('[WYR] Config load failed:', e);
+    });
+
+  const studentSubjects = [
+    { value: 'any subject or everyday life', label: 'Any / Icebreaker' },
+    { value: 'math and numbers', label: 'Math' },
+    { value: 'science and nature', label: 'Science' },
+    { value: 'history and social studies', label: 'History' },
+    { value: 'language arts and reading', label: 'ELA' },
+    { value: 'technology and AI', label: 'Technology & AI' },
+    { value: 'art and creativity', label: 'Art & Creativity' },
+    { value: 'physical education and health', label: 'PE & Health' },
+    { value: 'school life and learning', label: 'School Life' },
+  ];
+
+  const staffSubjects = [
+    { value: 'general icebreaker and everyday life', label: 'Any / Icebreaker' },
+    { value: 'work-life balance and self-care for educators', label: 'Work-Life Balance' },
+    { value: 'classroom management and teaching strategies', label: 'Teaching Strategies' },
+    { value: 'technology and AI in education', label: 'EdTech & AI' },
+    { value: 'professional development and growth', label: 'Professional Growth' },
+    { value: 'leadership and school culture', label: 'Leadership' },
+    { value: 'food drink and lifestyle', label: 'Food & Lifestyle' },
+    { value: 'travel and adventure', label: 'Travel & Adventure' },
+    { value: 'pop culture and entertainment for adults', label: 'Pop Culture' },
+  ];
+
+  function updateSubjectOptions(isStaff) {
+    const subjectEl = document.getElementById('subject');
+    const options = isStaff ? staffSubjects : studentSubjects;
+    subjectEl.innerHTML = options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+  }
+
+  gradeEl.addEventListener('change', () => {
+    const isStaff = gradeEl.value === 'staff';
+    updateSubjectOptions(isStaff);
+    document.getElementById('cringe-opt').style.display = isStaff ? '' : 'none';
+    document.getElementById('controversial-opt').style.display = isStaff ? '' : 'none';
+    document.getElementById('snarky-opt').style.display = isStaff ? '' : 'none';
+    if (!isStaff && (vibeEl.value === 'cringe' || vibeEl.value === 'controversial educational trends' || vibeEl.value === 'snarky')) {
+      vibeEl.value = 'thought-provoking and philosophical';
+      handleVibeChange();
+    }
+  });
+
+  function handleVibeChange() {
+    const v = vibeEl.value;
+    const isSpecial = v === 'cringe' || v === 'controversial educational trends' || v === 'snarky';
+    subjectGroup.classList.toggle('hidden', isSpecial);
+    const badge = document.getElementById('vibeBadge');
+    const pill = document.getElementById('vibePill');
+    if (v === 'cringe') {
+      badge.classList.add('visible');
+      pill.className = 'vibe-pill vibe-cringe';
+      pill.textContent = '😬 Cringe Mode Activated';
+    } else if (v === 'controversial educational trends') {
+      badge.classList.add('visible');
+      pill.className = 'vibe-pill vibe-controversial';
+      pill.textContent = '🌶️ Spicy Ed Debates';
+    } else if (v === 'snarky') {
+      badge.classList.add('visible');
+      pill.className = 'vibe-pill vibe-snarky';
+      pill.textContent = '😏 Snarky Mode Activated';
+    } else {
+      badge.classList.remove('visible');
+    }
+  }
+
+  function generateSessionId() {
+    return Math.random().toString(36).substring(2, 10);
+  }
+
+  function resetVotes() {
+    votesA = 0; votesB = 0;
+    updateVoteBars();
+    document.getElementById('votingBanner').style.display = 'none';
+    document.getElementById('startVoteBtn').classList.remove('visible');
+    document.getElementById('voteBarsA').classList.remove('visible');
+    document.getElementById('voteBarsB').classList.remove('visible');
+    document.getElementById('qrcode').innerHTML = '';
+    document.getElementById('shortUrl').textContent = 'Loading...';
+    if (pusherInstance) {
+      try {
+        if (pusherChannel) pusherInstance.unsubscribe(`session-${sessionId}`);
+        pusherInstance.disconnect();
+      } catch(e) {}
+      pusherInstance = null;
+      pusherChannel = null;
+    }
+  }
+  function updateVoteBars() {
+    const total = votesA + votesB;
+    const pctA = total > 0 ? Math.round((votesA / total) * 100) : 0;
+    const pctB = total > 0 ? Math.round((votesB / total) * 100) : 0;
+
+    document.getElementById('barFillA').style.width = pctA + '%';
+    document.getElementById('barFillB').style.width = pctB + '%';
+    document.getElementById('countA').textContent = votesA;
+    document.getElementById('countB').textContent = votesB;
+
+    document.getElementById('tallyA').style.width = pctA + '%';
+    document.getElementById('tallyB').style.width = pctB + '%';
+    document.getElementById('tallyNumA').textContent = votesA;
+    document.getElementById('tallyNumB').textContent = votesB;
+    document.getElementById('totalVotes').textContent = total + (total === 1 ? ' vote' : ' votes');
+  }
+
+  async function startVoting() {
+    if (!currentOptA || !currentOptB) return;
+
+    if (!configLoaded || !PUSHER_KEY) {
+      alert('Still loading configuration -- please try again in a moment.');
+      return;
+    }
+
+    // Reset votes and generate new session
+    votesA = 0; votesB = 0;
+    sessionId = generateSessionId();
+    updateVoteBars();
+
+    const voteUrl = `${window.location.origin}/vote.html?s=${sessionId}&a=${encodeURIComponent(currentOptA)}&b=${encodeURIComponent(currentOptB)}`;
+
+    // Show banner immediately
+    const banner = document.getElementById('votingBanner');
+    banner.style.display = 'flex';
+    document.getElementById('startVoteBtn').classList.remove('visible');
+    document.getElementById('voteBarsA').classList.add('visible');
+    document.getElementById('voteBarsB').classList.add('visible');
+
+    // Generate QR code
+    document.getElementById('qrcode').innerHTML = '';
+    try {
+      new QRCode(document.getElementById('qrcode'), {
+        text: voteUrl,
+        width: 120,
+        height: 120,
+        colorDark: '#1a1a1a',
+        colorLight: '#ffffff',
+      });
+    } catch(e) {
+      console.error('[WYR] QR code error:', e);
+      document.getElementById('qrcode').innerHTML = '<div style="color:#FFD700;font-size:11px;padding:8px;">QR unavailable<br>Use URL below</div>';
+    }
+
+    // Fetch short URL
+    const shortUrlEl = document.getElementById('shortUrl');
+    shortUrlEl.textContent = 'Loading...';
+    try {
+      const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(voteUrl)}`);
+      if (res.ok) {
+        const short = await res.text();
+        shortUrlEl.textContent = short.trim().replace('https://', '');
+      } else {
+        shortUrlEl.textContent = window.location.hostname + '/vote';
+      }
+    } catch (e) {
+      shortUrlEl.textContent = window.location.hostname + '/vote';
+    }
+
+    // Fresh Pusher connection every time
+    if (pusherInstance) {
+      try { pusherInstance.disconnect(); } catch(e) {}
+      pusherInstance = null;
+      pusherChannel = null;
+    }
+
+    try {
+      pusherInstance = new Pusher(PUSHER_KEY, {
+        cluster: PUSHER_CLUSTER,
+        forceTLS: true,
+      });
+
+      pusherInstance.connection.bind('connected', () => {
+        console.log('[WYR] Pusher connected, session:', sessionId);
+      });
+      pusherInstance.connection.bind('error', (err) => {
+        console.error('[WYR] Pusher error:', err);
+      });
+
+      pusherChannel = pusherInstance.subscribe(`session-${sessionId}`);
+      pusherChannel.bind('vote', (data) => {
+        console.log('[WYR] Vote received:', data.choice);
+        if (data.choice === 'A') votesA++;
+        else if (data.choice === 'B') votesB++;
+        updateVoteBars();
+      });
+    } catch(e) {
+      console.error('[WYR] Pusher init error:', e);
+    }
+  }
+
+  function closeVoting() {
+    document.getElementById('votingBanner').style.display = 'none';
+    document.getElementById('qrcode').innerHTML = '';
+    document.getElementById('shortUrl').textContent = 'Loading...';
+    document.getElementById('voteBarsA').classList.remove('visible');
+    document.getElementById('voteBarsB').classList.remove('visible');
+    document.getElementById('startVoteBtn').classList.add('visible');
+    votesA = 0; votesB = 0;
+    updateVoteBars();
+    if (pusherInstance) {
+      try {
+        if (pusherChannel) pusherInstance.unsubscribe(`session-${sessionId}`);
+        pusherInstance.disconnect();
+      } catch(e) {}
+      pusherInstance = null;
+      pusherChannel = null;
+    }
+  }
+
+  async function generate() {
+    const grade = gradeEl.value;
+    const subject = document.getElementById('subject').value;
+    const vibe = vibeEl.value;
+    const topic = document.getElementById('topicFocus').value;
+    const btn = document.querySelector('.gen-btn');
+
+    btn.disabled = true;
+    btn.textContent = 'Thinking...';
+    questionActive = false;
+    resetVotes();
+
+    const textA = document.getElementById('textA');
+    const textB = document.getElementById('textB');
+    const discText = document.getElementById('discText');
+    const arena = document.getElementById('arena');
+    const tags = document.getElementById('tags');
+
+    textA.textContent = '...';
+    textA.classList.remove('placeholder-text');
+    textB.textContent = '...';
+    textB.classList.remove('placeholder-text');
+    discText.innerHTML = '<span class="disc-loading">Generating your dilemma...</span>';
+    tags.innerHTML = '';
+    currentOptA = '';
+    currentOptB = '';
+
+    arena.classList.remove('vibe-cringe-active', 'vibe-controversial-active', 'vibe-snarky-active');
+    if (vibe === 'cringe') arena.classList.add('vibe-cringe-active');
+    if (vibe === 'controversial educational trends') arena.classList.add('vibe-controversial-active');
+    if (vibe === 'snarky') arena.classList.add('vibe-snarky-active');
+
+    try {
+      const res = await fetch('/.netlify/functions/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grade, subject, vibe, topic, exclude: usedQuestions })
+      });
+      if (!res.ok) throw new Error('Server error');
+      const data = await res.json();
+
+      textA.textContent = data.optionA;
+      textB.textContent = data.optionB;
+      discText.textContent = data.discussion;
+      currentOptA = data.optionA;
+      currentOptB = data.optionB;
+
+      // Remember this dilemma so the next Generate avoids repeating it
+      usedQuestions.push(data.optionA);
+      if (usedQuestions.length > 20) usedQuestions.shift();
+
+      if (data.tags && data.tags.length) {
+        tags.innerHTML = data.tags.map(t => `<span class="tag">${t}</span>`).join('');
+      }
+
+      questionActive = true;
+      document.getElementById('startVoteBtn').classList.add('visible');
+
+    } catch (err) {
+      textA.textContent = 'Oops!';
+      textB.textContent = 'Try again';
+      discText.textContent = 'Something went wrong. Hit Generate again!';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Generate ⚡';
+  }
+</script>
+</body>
+</html>

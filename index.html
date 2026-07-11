@@ -286,6 +286,35 @@
     }
     .start-vote-btn.visible { display: block; }
     .start-vote-btn:hover { transform: translate(-1px,-1px); }
+
+    /* EDIT PROMPTS */
+    .edit-btn {
+      background: #fff; color: #1a1a1a;
+      border: 2.5px solid #1a1a1a; border-radius: 10px;
+      padding: 10px 20px; font-size: 14px;
+      font-family: 'Nunito', sans-serif; font-weight: 900;
+      cursor: pointer; box-shadow: 4px 4px 0 #1a1a1a;
+      transition: transform 0.1s; white-space: nowrap;
+      display: none; align-self: flex-end;
+    }
+    .edit-btn.visible { display: block; }
+    .edit-btn:hover { transform: translate(-1px,-1px); }
+    .edit-btn.done { background: #FFD700; }
+    .edit-hint {
+      display: none;
+      background: #1a1a1a; color: #FFD700;
+      border: 2px solid #FFD700; border-radius: 10px;
+      padding: 8px 14px; margin-bottom: 0.75rem;
+      font-size: 13px; font-weight: 700; text-align: center;
+    }
+    .arena.editing .choice-text {
+      outline: 3px dashed rgba(255,255,255,0.75);
+      outline-offset: 4px; border-radius: 8px;
+      cursor: text; background: rgba(255,255,255,0.10);
+      padding: 4px 8px;
+    }
+    .arena.editing .choice-text:focus { outline-color: #FFD700; }
+
     .credit { text-align: center; font-size: 12px; font-weight: 700; color: rgba(0,0,0,0.3); margin-top: 1rem; }
     .credit a { color: rgba(0,0,0,0.4); }
 
@@ -384,6 +413,9 @@
     <button class="close-vote-btn" onclick="closeVoting()">✕ Close</button>
   </div>
 
+  <!-- EDIT HINT -- shows while editing prompts -->
+  <div class="edit-hint" id="editHint">✏️ Editing on. Click either card to reword it, then hit Done. Students only see your final wording.</div>
+
   <!-- ARENA -->
   <div class="arena" id="arena">
     <div class="choice-card choice-a">
@@ -417,6 +449,7 @@
       <span class="disc-label">Discussion</span>
       <p class="disc-text" id="discText">Your discussion prompt will appear here after generating.</p>
     </div>
+    <button class="edit-btn" id="editBtn" onclick="toggleEdit()">✏️ Edit Prompts</button>
     <button class="start-vote-btn" id="startVoteBtn" onclick="startVoting()">
       📲 Start Live Voting
     </button>
@@ -442,6 +475,7 @@
   let currentOptA = '';
   let currentOptB = '';
   let questionActive = false;
+  let editing = false;
 
   // Tracks recently shown dilemmas so the server can avoid repeats
   let usedQuestions = [];
@@ -533,6 +567,8 @@
     updateVoteBars();
     document.getElementById('votingBanner').style.display = 'none';
     document.getElementById('startVoteBtn').classList.remove('visible');
+    document.getElementById('editBtn').classList.remove('visible');
+    exitEditVisual();
     document.getElementById('voteBarsA').classList.remove('visible');
     document.getElementById('voteBarsB').classList.remove('visible');
     document.getElementById('qrcode').innerHTML = '';
@@ -564,6 +600,7 @@
   }
 
   async function startVoting() {
+    if (editing) commitEdit();
     if (!currentOptA || !currentOptB) return;
 
     if (!configLoaded || !PUSHER_KEY) {
@@ -582,6 +619,7 @@
     const banner = document.getElementById('votingBanner');
     banner.style.display = 'flex';
     document.getElementById('startVoteBtn').classList.remove('visible');
+    document.getElementById('editBtn').classList.remove('visible');
     document.getElementById('voteBarsA').classList.add('visible');
     document.getElementById('voteBarsB').classList.add('visible');
 
@@ -654,6 +692,7 @@
     document.getElementById('voteBarsA').classList.remove('visible');
     document.getElementById('voteBarsB').classList.remove('visible');
     document.getElementById('startVoteBtn').classList.add('visible');
+    document.getElementById('editBtn').classList.add('visible');
     votesA = 0; votesB = 0;
     updateVoteBars();
     if (pusherInstance) {
@@ -664,6 +703,55 @@
       pusherInstance = null;
       pusherChannel = null;
     }
+  }
+
+  function toggleEdit() {
+    if (editing) commitEdit();
+    else enterEdit();
+  }
+
+  function enterEdit() {
+    if (!questionActive) return;
+    editing = true;
+    const a = document.getElementById('textA');
+    const b = document.getElementById('textB');
+    [a, b].forEach(el => {
+      el.setAttribute('contenteditable', 'true');
+      el.classList.remove('placeholder-text');
+    });
+    document.getElementById('arena').classList.add('editing');
+    document.getElementById('editHint').style.display = 'block';
+    const btn = document.getElementById('editBtn');
+    btn.textContent = '✓ Done';
+    btn.classList.add('done');
+    a.focus();
+  }
+
+  function commitEdit() {
+    const a = document.getElementById('textA');
+    const b = document.getElementById('textB');
+    let ta = (a.textContent || '').replace(/\s+/g, ' ').trim();
+    let tb = (b.textContent || '').replace(/\s+/g, ' ').trim();
+    // If a field was cleared, keep the previous wording rather than shipping a blank
+    if (!ta) ta = currentOptA;
+    if (!tb) tb = currentOptB;
+    a.textContent = ta;
+    b.textContent = tb;
+    currentOptA = ta;
+    currentOptB = tb;
+    exitEditVisual();
+  }
+
+  function exitEditVisual() {
+    editing = false;
+    const a = document.getElementById('textA');
+    const b = document.getElementById('textB');
+    [a, b].forEach(el => el.setAttribute('contenteditable', 'false'));
+    document.getElementById('arena').classList.remove('editing');
+    document.getElementById('editHint').style.display = 'none';
+    const btn = document.getElementById('editBtn');
+    btn.textContent = '✏️ Edit Prompts';
+    btn.classList.remove('done');
   }
 
   async function generate() {
@@ -723,6 +811,7 @@
 
       questionActive = true;
       document.getElementById('startVoteBtn').classList.add('visible');
+      document.getElementById('editBtn').classList.add('visible');
 
     } catch (err) {
       textA.textContent = 'Oops!';
